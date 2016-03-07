@@ -3,7 +3,7 @@ var path = require('path');
 var fs = require('fs');
 var os = require('os');
 var expect = require('expect.js');
-var babelPluginRewire = /*require('../lib/babel-plugin-rewire.js'); // */require('../test-helpers/getBabelPluginRewire.js');
+var babelPluginRewire = require('../lib/babel-plugin-rewire.js'); // require('../test-helpers/getBabelPluginRewire.js');
 
 
 describe('BabelRewirePluginTest', function() {
@@ -13,7 +13,8 @@ describe('BabelRewirePluginTest', function() {
 			babelPluginRewire,
 			"syntax-async-functions",
 			"syntax-flow",
-			"syntax-jsx"
+			"syntax-jsx",
+			"transform-export-extensions"
 		]
 	};
 
@@ -26,6 +27,7 @@ describe('BabelRewirePluginTest', function() {
 			"transform-es2015-block-scoping",
 			"transform-es2015-template-literals",
 			"transform-es2015-typeof-symbol",
+			"transform-export-extensions",
 			"transform-regenerator"
 		]
 	};
@@ -87,6 +89,7 @@ describe('BabelRewirePluginTest', function() {
 		'primitiveExportWithNamedFunctionExport',
 		'wildcardImport',
 		'wildcardExport',
+		'namedWildcardExport',
 		'recursiveRewireCall',
 		'requireExports',
 		'requireMultiExports',
@@ -94,6 +97,8 @@ describe('BabelRewirePluginTest', function() {
 		'topLevelVar',
 		'functionRewireScope',
 		'issue69',
+		'issue71-tdz',
+		'issue71-tdz-index',
 		'flowTypeExport',
 		'flowTypeImport',
 		'updateOperations',

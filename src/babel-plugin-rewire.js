@@ -27,8 +27,12 @@ module.exports = function({ types: t }) {
 				rewireInformation.ensureAccessor(tagName);
 
 				let insertingBefore = path;
-				while(insertingBefore.parentPath.node != scope.block && insertingBefore.parentPath.type !== 'BlockStatement') {
+
+				//TODO recursively respect switch statements
+				let scopeReached = insertingBefore.parentPath.node === scope.block;
+				while((insertingBefore.parentPath.type === 'SwitchStatement') || (!scopeReached && insertingBefore.parentPath.type !== 'BlockStatement')) {
 					insertingBefore = insertingBefore.parentPath;
+					scopeReached = insertingBefore.parentPath.node === scope.block;
 				}
 
 				let componentIdentifier = scope.generateUidIdentifier(tagName + '_Component');
@@ -72,9 +76,7 @@ module.exports = function({ types: t }) {
 							arrowFunctionExpression.async
 						)
 					);
-				} else if (insertingBefore.parentPath.type === 'SwitchStatement') {
-					path.parentPath.insertBefore(temporaryComponentDeclaration);
-				} else {
+				}  else {
 					insertingBefore.insertBefore(temporaryComponentDeclaration);
 				}
 			}
@@ -103,7 +105,8 @@ module.exports = function({ types: t }) {
 						rewireInformation.addUpdateableVariable(variableName);
 						path.parentPath.replaceWith(t.callExpression(rewireInformation.getUpdateOperationID(), [ t.stringLiteral(parent.operator), t.stringLiteral(variableName), t.booleanLiteral(parent.prefix) ]));
 					} else {
-						rewireInformation.ensureAccessor(variableName);
+						let isWildCardImport = (variableBinding.path.type === 'ImportNamespaceSpecifier');
+						rewireInformation.ensureAccessor(variableName, isWildCardImport);
 						path.replaceWith(t.callExpression(rewireInformation.getUniversalGetterID(), [ t.stringLiteral(variableName) ]));
 					}
 				} else if(parent.type === 'AssignmentExpression' && parent.left == node) {
@@ -120,7 +123,8 @@ module.exports = function({ types: t }) {
 
 		'ExportNamedDeclaration|ExportAllDeclaration': function ({ node: { specifiers = [] } }, rewireInformation) {
 			let hasDefaultExport = specifiers.some(function(specifier) {
-				return specifier.local.name === 'default';
+				return ((specifier.local && specifier.local.name === 'default') ||
+					(specifier.exported && specifier.exported.name === 'default'));
 			});
 			rewireInformation.hasES6DefaultExport = rewireInformation.hasES6DefaultExport || hasDefaultExport;
 			rewireInformation.isES6Module = true;
@@ -206,7 +210,7 @@ module.exports = function({ types: t }) {
 				path.traverse(BodyVisitor, rewireState);
 
 				if(rewireState.containsDependenciesToRewire()) {
-					rewireState.appendUniversalAccessors(scope);
+					rewireState.prependUniversalAccessors(scope);
 					rewireState.appendExports();
 
 					path.replaceWith(noRewire(t.Program(program.body.concat(rewireState.nodesToAppendToProgramBody), program.directives)));

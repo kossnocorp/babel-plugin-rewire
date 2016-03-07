@@ -15,7 +15,23 @@
 import template from 'babel-template';
 
 export const universalAccesorsTemplate = template(`
-let REWIRED_DATA_IDENTIFIER = {};
+var REWIRED_DATA_IDENTIFIER = {};
+
+let API_OBJECT_ID = {};
+
+(function() {
+	function addPropertyToAPIObject(name, value) {
+		Object.defineProperty(API_OBJECT_ID, name, { value: value, enumerable: false, configurable: true });
+	}
+
+	addPropertyToAPIObject('__get__', UNIVERSAL_GETTER_ID);
+	addPropertyToAPIObject('__GetDependency__', UNIVERSAL_GETTER_ID);
+	addPropertyToAPIObject('__Rewire__', UNIVERSAL_SETTER_ID);
+	addPropertyToAPIObject('__set__', UNIVERSAL_SETTER_ID);
+	addPropertyToAPIObject('__reset__', UNIVERSAL_RESETTER_ID);
+	addPropertyToAPIObject('__ResetDependency__', UNIVERSAL_RESETTER_ID);
+	addPropertyToAPIObject('__with__', UNIVERSAL_WITH_ID);
+})();
 
 function UNIVERSAL_GETTER_ID(variableName) {
 	return (REWIRED_DATA_IDENTIFIER === undefined || REWIRED_DATA_IDENTIFIER[variableName] === undefined) ? ORIGINAL_VARIABLE_ACCESSOR_IDENTIFIER(variableName) : REWIRED_DATA_IDENTIFIER[variableName];
@@ -73,21 +89,7 @@ function UNIVERSAL_WITH_ID(object) {
 	}
 }
 
-let API_OBJECT_ID = {};
 
-(function() {
-	function addPropertyToAPIObject(name, value) {
-		Object.defineProperty(API_OBJECT_ID, name, { value: value, enumerable: false, configurable: true });
-	}
-
-	addPropertyToAPIObject('__get__', UNIVERSAL_GETTER_ID);
-	addPropertyToAPIObject('__GetDependency__', UNIVERSAL_GETTER_ID);
-	addPropertyToAPIObject('__Rewire__', UNIVERSAL_SETTER_ID);
-	addPropertyToAPIObject('__set__', UNIVERSAL_SETTER_ID);
-	addPropertyToAPIObject('__reset__', UNIVERSAL_RESETTER_ID);
-	addPropertyToAPIObject('__ResetDependency__', UNIVERSAL_RESETTER_ID);
-	addPropertyToAPIObject('__with__', UNIVERSAL_WITH_ID);
-})();
 `);
 
 export const enrichExportTemplate = template(`
@@ -105,5 +107,29 @@ if((typeOfOriginalExport === 'object' || typeOfOriginalExport === 'function') &&
 	addNonEnumerableProperty('__ResetDependency__', UNIVERSAL_RESETTER_ID);
 	addNonEnumerableProperty('__with__', UNIVERSAL_WITH_ID);
 	addNonEnumerableProperty('__RewireAPI__', API_OBJECT_ID);
+}
+`);
+
+export const filterWildcardImportTemplate = template(`
+function FILTER_WILDCARD_IMPORT_IDENTIFIER(wildcardImport={}) {
+	let validPropertyNames = Object.keys(wildcardImport).filter(function(propertyName) {
+		return  propertyName !== '__get__' &&
+				propertyName !== '__set__' &&
+				propertyName !== '__reset__' &&
+				propertyName !== '__with__' &&
+
+				propertyName !== '__GetDependency__' &&
+				propertyName !== '__Rewire__' &&
+				propertyName !== '__ResetDependency__' &&
+
+				propertyName !== '__RewireAPI__';
+	});
+
+	return validPropertyNames.reduce(
+		function(filteredWildcardImport, propertyName) {
+			filteredWildcardImport[propertyName] = wildcardImport[propertyName];
+			return filteredWildcardImport;
+		}, {}
+	);
 }
 `);

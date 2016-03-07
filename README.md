@@ -357,6 +357,9 @@ babel-node ./node_modules/istanbul/lib/cli.js cover test/run-tests.js
 
 See the istanbul [sample-babel-node](https://github.com/istanbuljs/sample-babel-node) project for a full working example.
 
+## Examples projects
+* [es6-library-boilerplate](https://github.com/CurtisHumphrey/es6-library-boilerplate)
+
 ## Release History
 
 * 0.1.0 Initial release
@@ -388,6 +391,7 @@ See the istanbul [sample-babel-node](https://github.com/istanbuljs/sample-babel-
 * 1.0.0-beta-3 Removed support for rewiring of globals. Added support for rewiring in combination with assignment and update expressions.
 * 1.0.0-beta-4 Updates jsx support in combination with babel 6 but has a regression
 * 1.0.0-beta-5 Fixes rewiring of jsx elements. Readme improvements. Test for pass-through like modules.
+* 1.0.0-rc-1 Fixes rewiring of switch statements. Readme improvements. Wildcard imports and tdz issues.
 
 ## Contributors
 
@@ -396,6 +400,8 @@ See the istanbul [sample-babel-node](https://github.com/istanbuljs/sample-babel-
 [TheSavior](https://github.com/TheSavior) - support for non-enumerable rewire properties
 [PSpSynedra](https://github.com/PSpSynedra) - support for named export and function rewiring and improvements of default imports 
 [Gustaf Dalemar](https://github.com/DLMR) - support for asynchronous functions
+[Spencre Leichty](https://github.com/spncrlkt) - support for named wildcard exports
+[Zhanzhan He](https://github.com/zh3) - support for wildcard imports
 
 ## License
 

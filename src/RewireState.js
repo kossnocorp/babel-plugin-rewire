@@ -12,7 +12,7 @@
  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.*/
 
-import { universalAccesorsTemplate, enrichExportTemplate } from './Templates.js';
+import { universalAccesorsTemplate, enrichExportTemplate, filterWildcardImportTemplate } from './Templates.js';
 import { wasProcessed, noRewire } from './RewireHelpers.js';
 import * as t from 'babel-types';
 
@@ -25,6 +25,7 @@ export default class RewireState {
 		this.nodesToAppendToProgramBody = [];
 		this.hasCommonJSExport = false;
 		this.accessors = {};
+		this.isWildcardImport = {};
 		this.updateableVariables = {};
 		this.rewiredDataIdentifier = scope.generateUidIdentifier('__RewiredData__');
 		this.originalVariableAccessorIdentifier = scope.generateUidIdentifier('__get_original__');
@@ -49,9 +50,17 @@ export default class RewireState {
 		this.nodesToAppendToProgramBody = this.nodesToAppendToProgramBody.concat(nodes);
 	}
 
-	ensureAccessor(variableName) {
+	prependToProgramBody(nodes) {
+		if(!Array.isArray(nodes)) {
+			nodes = [ nodes ];
+		}
+		this.nodesToAppendToProgramBody = nodes.concat(this.nodesToAppendToProgramBody);
+	}
+
+	ensureAccessor(variableName, isWildcardImport = false) {
 		if(!this.accessors[variableName]) {
 			this.accessors[variableName] = true;
+			this.isWildcardImport[variableName] = isWildcardImport
 		}
 
 		return this.accessors[variableName];
@@ -62,11 +71,22 @@ export default class RewireState {
 		this.ensureAccessor(variableName);
 	}
 
-	appendUniversalAccessors(scope) {
+	prependUniversalAccessors(scope) {
+		let hasWildcardImport = Object.keys(this.isWildcardImport).some(function(propertyName) {
+			return this.isWildcardImport[propertyName];
+		}.bind(this));
+		let filterWildcardImportIdentifier =  (hasWildcardImport &&  noRewire(scope.generateUidIdentifier('__filterWildcardImport__'))) || null;
+
 		let originalAccessor = t.functionDeclaration(this.originalVariableAccessorIdentifier, [ t.identifier('variableName') ], t.blockStatement([
 			t.switchStatement(t.identifier('variableName'), Object.keys(this.accessors).map(function(identifierName) {
-				return t.switchCase(t.stringLiteral(identifierName), [ t.returnStatement(noRewire(t.identifier(identifierName))) ] );
-			})),
+				let accessOriginalVariable = noRewire(t.identifier(identifierName));
+
+				if(this.isWildcardImport[identifierName]) {
+					accessOriginalVariable = t.callExpression(filterWildcardImportIdentifier, [ accessOriginalVariable ]);
+				}
+
+				return t.switchCase(t.stringLiteral(identifierName), [ t.returnStatement(accessOriginalVariable) ] );
+			}, this)),
 			t.returnStatement(noRewire(t.identifier('undefined')))
 		]));
 
@@ -78,7 +98,7 @@ export default class RewireState {
 			t.returnStatement(noRewire(t.identifier('undefined')))
 		]));
 
-		this.appendToProgramBody(universalAccesorsTemplate({
+		this.prependToProgramBody(universalAccesorsTemplate({
 			ORIGINAL_VARIABLE_ACCESSOR_IDENTIFIER: this.originalVariableAccessorIdentifier,
 			ORIGINAL_VARIABLE_SETTER_IDENTIFIER: this.originalVariableSetterIdentifier,
 			ASSIGNMENT_OPERATION_IDENTIFIER: this.assignmentOperationIdentifier,
@@ -92,6 +112,12 @@ export default class RewireState {
 			API_OBJECT_ID: this.getAPIObjectID(),
 			REWIRED_DATA_IDENTIFIER: this.rewiredDataIdentifier
 		}));
+
+		if(hasWildcardImport) {
+			this.appendToProgramBody(filterWildcardImportTemplate({
+				FILTER_WILDCARD_IMPORT_IDENTIFIER: filterWildcardImportIdentifier
+			}));
+		}
 	}
 
 	appendExports() {

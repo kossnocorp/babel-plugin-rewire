@@ -3,7 +3,7 @@ var path = require('path');
 var fs = require('fs');
 var expect = require('expect.js');
 var hook = require('node-hook');
-var babelPluginRewire = /*require('../lib/babel-plugin-rewire.js'); // */require('../test-helpers/getBabelPluginRewire.js');
+var babelPluginRewire = require('../lib/babel-plugin-rewire.js'); // */require('../test-helpers/getBabelPluginRewire.js');
 require('core-js');
 
 function isSampleCode(filename) {
@@ -18,9 +18,10 @@ function transformSampleCodeToTestWithBabelPluginRewire(source, filename) {
 		"plugins": [
 			babelPluginRewire,
 			"syntax-async-functions",
-			"transform-es2015-block-scoping",
 			"transform-es2015-template-literals",
+			"transform-es2015-block-scoping",
 			"transform-es2015-typeof-symbol",
+			"transform-export-extensions",
 			"transform-regenerator"
 		]
 	};
@@ -47,6 +48,8 @@ require('../samples/issue30/sample.js');
 require('../samples/issue33/sample.js');
 require('../samples/issue48/sample.js');
 require('../samples/issue59/sample.js');
+require('../samples/issue71-tdz/sample.js');
+//uncomment as we are currently not able to support this. As this as soon as we are able to support wildcard rexecport: require('../samples/issue78/sample.js');
 require('../samples/issue82/sample.js');
 require('../samples/functionRewireScope/sample.js');
 require('../samples/namedExportsRewire/sample.js');
@@ -66,5 +69,7 @@ require('../samples/rewireClasses/sample.js');
 require('../samples/objectAssign/sample.js');
 require('../samples/updateOperations/sample.js');
 require('../samples/wildcardExport/sample.js');
+require('../samples/namedWildcardExport/sample.js');
 require('../samples/assignmentOperations/sample.js');
+require('../samples/jsx-switch/sample.js');
 hook.unhook('.js'); // removes your own transform
